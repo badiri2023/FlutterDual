@@ -5,7 +5,7 @@ import 'vistaWiki.dart';
 import 'vistaChat.dart';
 import 'dialogoLogin.dart';
 import 'dialogoRegistro.dart';
-
+import 'vistaAjustes.dart';
 class VistaPrincipal extends StatefulWidget {
   const VistaPrincipal({super.key});
 
@@ -19,7 +19,8 @@ class _VistaPrincipalState extends State<VistaPrincipal> {
   final List<Widget> _vistas = [
     const VistaInicio(), 
     const VistaWiki(),   
-    const VistaChat(),   
+    const VistaChat(),  
+    const VistaAjustes(), 
   ];
 
   void _cambiarVista(int indice) {
@@ -101,6 +102,12 @@ class _VistaPrincipalState extends State<VistaPrincipal> {
                     title: const Text('Chat Global'),
                     selected: _indiceActual == 2,
                     onTap: () => _cambiarVista(2),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.settings),
+                    title: const Text('Ajustes'),
+                    selected: _indiceActual == 3,
+                    onTap: () => _cambiarVista(3), 
                   ),
                 ],
               ),

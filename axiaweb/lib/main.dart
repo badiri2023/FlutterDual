@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'vistas/vistaPrincipal.dart'; // Le dices que entre a la carpeta primero
 
 final ValueNotifier<ThemeMode> temaNotifier = ValueNotifier(ThemeMode.light);
+final ValueNotifier<String> disenoNotifier = ValueNotifier('Moderno'); 
+final ValueNotifier<bool> musicaNotifier = ValueNotifier(false);
+final ValueNotifier<bool> sonidoNotifier = ValueNotifier(true);
 
 void main() {
   runApp(const MiAppDual());
