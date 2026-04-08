@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   # LIBRERÍA DE AUDIO: Para música y efectos
   audioplayers: ^5.2.1 
+  http: ^1.6.0
+  web_socket_channel: ^3.0.3
 
 dev_dependencies:
   flutter_test:
