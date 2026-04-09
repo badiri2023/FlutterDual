@@ -3,15 +3,17 @@ import 'package:http/http.dart' as http;
 import '../models/carta.dart'; 
 
 class ApiServicio {
-  static const String _urlBase = 'https://mi-servidor-axia.com/api';
+  // 1. Dejamos la URL base hasta /api para que sirva para todos los controladores
+  static const String _urlBase = 'http://13.49.2.229:5000/api';
 
   static Future<Map<String, dynamic>> hacerLogin(String correo, String password) async {
     try {
       final respuesta = await http.post(
-        Uri.parse('$_urlBase/login'),
+        // Añadimos /auth/login aquí
+        Uri.parse('$_urlBase/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'correo': correo,
+          'email': correo,       // 2. Cambiado de 'correo' a 'email' para que C# lo entienda
           'password': password,
         }),
       );
@@ -26,6 +28,64 @@ class ApiServicio {
       }
     } catch (e) {
       return {'exito': false, 'mensaje': 'No hay conexión a internet o el servidor está caído'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> registrarUsuario(String nombre, String correo, String password) async {
+    try {
+      final respuesta = await http.post(
+        // 3. Cambiado a /register para coincidir con tu [HttpPost("register")] en C#
+        Uri.parse('$_urlBase/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': nombre,    // 2. Cambiado a 'username'
+          'email': correo,       // 2. Cambiado a 'email'
+          'password': password,
+        }),
+      );
+
+      if (respuesta.statusCode == 200 || respuesta.statusCode == 201) { 
+        // C# devuelve Ok() que es 200, no 201 en tu código actual
+        return {'exito': true, 'mensaje': 'Cuenta creada con éxito'};
+      } else {
+        final error = jsonDecode(respuesta.body);
+        return {'exito': false, 'mensaje': error['mensaje'] ?? 'Error al registrar'};
+      }
+    } catch (e) {
+      return {'exito': false, 'mensaje': 'Error de conexión'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> obtenerCatalogoCartas() async {
+    try {
+      // 4. Actualizado para usar _urlBase y quitar la IP vieja de 192.168...
+      final url = Uri.parse('$_urlBase/cartas/wiki'); 
+      
+      final respuesta = await http.get(url);
+
+      if (respuesta.statusCode == 200) {
+        final List<dynamic> datosDecodificados = json.decode(respuesta.body);
+        
+        List<CartaWiki> listaCartas = datosDecodificados.map((item) {
+          return CartaWiki(
+            id: item['id']?.toString() ?? '0', 
+            expansion: item['Expansión'] ?? 'Desconocida',
+            nombre: item['Nombre'] ?? 'Sin nombre',
+            rareza: item['Rareza'] ?? 'Común',
+            mana: item['Maná'] ?? 0,
+            habilidad: item['Habilidades'] ?? '',
+            ataque: item['Ataque'] ?? 0,
+            vida: item['Vida'] ?? 0,
+            descripcion: item['Descripción'] ?? '',
+          );
+        }).toList();
+
+        return {'exito': true, 'datos': listaCartas};
+      } else {
+        return {'exito': false, 'mensaje': 'Error del servidor: ${respuesta.statusCode}'};
+      }
+    } catch (e) {
+      return {'exito': false, 'mensaje': 'Error de conexión: No se pudo conectar al servidor'};
     }
   }
 
@@ -64,68 +124,6 @@ class ApiServicio {
       }
     } catch (e) {
       return {'exito': false, 'mensaje': 'Error de conexión al guardar el mazo'};
-    }
-  }
-
-
-  // Añade esto dentro de tu clase ApiServicio:
-  static Future<Map<String, dynamic>> obtenerCatalogoCartas() async {
-    try {
-      final url = Uri.parse('http://192.168.1.XX:3000/api/cartas/wiki'); 
-      
-      final respuesta = await http.get(url);
-
-      if (respuesta.statusCode == 200) {
-        // Si el servidor responde bien, convertimos el JSON a una lista
-        final List<dynamic> datosDecodificados = json.decode(respuesta.body);
-        
-        // Mapeamos los datos del servidor a nuestros objetos CartaWiki
-        List<CartaWiki> listaCartas = datosDecodificados.map((item) {
-          return CartaWiki(
-            id: item['id']?.toString() ?? '0', 
-            expansion: item['Expansión'] ?? 'Desconocida',
-            nombre: item['Nombre'] ?? 'Sin nombre',
-            rareza: item['Rareza'] ?? 'Común',
-            mana: item['Maná'] ?? 0,
-            habilidad: item['Habilidades'] ?? '',
-            ataque: item['Ataque'] ?? 0,
-            vida: item['Vida'] ?? 0,
-            descripcion: item['Descripción'] ?? '',
-            // imagenUrl: item['imagen'] ?? '', // Descomenta esto cuando tengas las URLs de tus imágenes
-          );
-        }).toList();
-
-        return {'exito': true, 'datos': listaCartas};
-      } else {
-        return {'exito': false, 'mensaje': 'Error del servidor: ${respuesta.statusCode}'};
-      }
-    } catch (e) {
-      return {'exito': false, 'mensaje': 'Error de conexión: No se pudo conectar al servidor'};
-    }
-  }
-
-  // --- MÉTODO PARA REGISTRARSE ---
-  static Future<Map<String, dynamic>> registrarUsuario(String nombre, String correo, String password) async {
-    try {
-      final respuesta = await http.post(
-        Uri.parse('$_urlBase/registro'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'nombre': nombre,
-          'correo': correo,
-          'password': password,
-        }),
-      );
-
-      if (respuesta.statusCode == 201) { // 201 significa "Creado"
-        return {'exito': true, 'mensaje': 'Cuenta creada con éxito'};
-      } else {
-        // Capturamos el error que envíe el servidor (ej. "El correo ya existe")
-        final error = jsonDecode(respuesta.body);
-        return {'exito': false, 'mensaje': error['mensaje'] ?? 'Error al registrar'};
-      }
-    } catch (e) {
-      return {'exito': false, 'mensaje': 'Error de conexión'};
     }
   }
 }
