@@ -34,8 +34,7 @@ class _VistaPrincipalState extends State<VistaPrincipal> {
     _todasLasVistas = [
       const VistaInicio(),   // Índice 0
       const VistaWiki(),     // Índice 1
-      const VistaChat(),     // Índice 2
-      const VistaAjustes(),  // Índice 3
+      VistaChat(nombreUsuario: _nombreUsuario),      const VistaAjustes(),  // Índice 3
       const VistaMazos(), // Índice 4 (Requiere Login)
       //const VistaTienda(),// Índice 5 (Requiere Login)
       

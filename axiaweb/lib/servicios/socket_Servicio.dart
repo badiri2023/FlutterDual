@@ -3,35 +3,35 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 class SocketServicio {
   WebSocketChannel? _canal;
+  final String _urlSocket = 'ws://13.49.2.229:5000/chat'; // IP de tu servidor C#
 
-  // Cambia 'ws://' o 'wss://' según tu servidor
-  final String _urlSocket = 'wss://axiaserver.com/chat';
+  Stream<dynamic>? get streamMensajes => _canal?.stream;
 
-  // Conectar al chat
-  void conectar() {
-    _canal = WebSocketChannel.connect(Uri.parse(_urlSocket));
-    print("Conectado al Chat Global");
-  }
-
-  // Desconectar (importante para no gastar batería/datos cuando el usuario sale de la vista)
-  void desconectar() {
-    _canal?.sink.close();
-    print("Desconectado del Chat Global");
-  }
-
-  // Enviar un mensaje
-  void enviarMensaje(String usuario, String texto) {
-    if (_canal != null) {
-      // Enviamos el mensaje en formato JSON
-      final mensajeJson = jsonEncode({
-        'usuario': usuario,
-        'texto': texto,
-        'fecha': DateTime.now().toIso8601String(),
-      });
-      _canal!.sink.add(mensajeJson);
+  void conectar(String? token) {
+    if (token == null) return;
+    
+    // Conexión con token para SignalR/WebSockets en C#
+    final urlFinal = '$_urlSocket?access_token=$token';
+    
+    try {
+      _canal = WebSocketChannel.connect(Uri.parse(urlFinal));
+      print("Conectado al Chat");
+    } catch (e) {
+      print("Error socket: $e");
     }
   }
 
-  // Escuchar los mensajes que llegan del servidor
-  Stream<dynamic>? get streamMensajes => _canal?.stream;
+  void desconectar() {
+    _canal?.sink.close();
+  }
+
+  void enviarMensaje(String usuario, String texto) {
+    if (_canal != null) {
+      _canal!.sink.add(jsonEncode({
+        'usuario': usuario,
+        'texto': texto,
+        'fecha': DateTime.now().toIso8601String(),
+      }));
+    }
+  }
 }
