@@ -41,7 +41,7 @@ class _DialogoLoginState extends State<DialogoLogin> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('¡Bienvenido de vuelta!')),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, _emailLoginController.text);
         }
       } else {
         if (mounted) {

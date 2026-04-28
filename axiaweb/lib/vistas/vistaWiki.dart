@@ -11,27 +11,24 @@ class VistaWiki extends StatefulWidget {
 }
 
 class _VistaWikiState extends State<VistaWiki> {
-  // Ahora la lista empieza vacía
+  // Volvemos a usar tu lista de objetos CartaWiki
   List<CartaWiki> _cartasBaseDatos = [];
   
-  // Controlamos si está cargando o si hubo un error
   bool _cargando = true;
   String _mensajeError = '';
 
   @override
   void initState() {
     super.initState();
-    // Nada más abrir la vista, pedimos las cartas al servidor
     _cargarCatalogo();
   }
 
   Future<void> _cargarCatalogo() async {
-    // Usamos el servicio (tendremos que añadir esta función allí)
     final respuesta = await ApiServicio.obtenerCatalogoCartas();
 
     if (respuesta['exito']) {
       setState(() {
-        _cartasBaseDatos = respuesta['datos']; // Guardamos las cartas reales
+        _cartasBaseDatos = respuesta['datos']; 
         _cargando = false;
       });
     } else {
@@ -49,13 +46,11 @@ class _VistaWikiState extends State<VistaWiki> {
         title: const Text('Wiki de Cartas'),
         centerTitle: true,
       ),
-      // Mostramos el contenido dependiendo del estado
       body: _construirCuerpo(),
     );
   }
 
   Widget _construirCuerpo() {
-    // 1. Si está cargando, mostramos la rueda
     if (_cargando) {
       return const Center(
         child: Column(
@@ -69,21 +64,19 @@ class _VistaWikiState extends State<VistaWiki> {
       );
     }
 
-    // 2. Si hubo un error (ej. servidor caído)
     if (_mensajeError.isNotEmpty) {
       return Center(
         child: Text('Error: $_mensajeError', style: const TextStyle(color: Colors.red)),
       );
     }
 
-    // 3. Si no hay cartas en el servidor
     if (_cartasBaseDatos.isEmpty) {
       return const Center(
         child: Text('No hay cartas disponibles en este momento.'),
       );
     }
 
-    // 4. Si todo fue bien, mostramos el Grid con el redimensionado automático
+    // Aquí volvemos a usar tu GridView con el Prefab
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(

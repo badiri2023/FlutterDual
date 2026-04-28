@@ -8,7 +8,6 @@ class CartaWiki {
   final int ataque;
   final int vida;
   final String descripcion;
-  // Usaremos un icono temporal hasta que conectes tus imágenes reales
   final String imagenUrl; 
 
   CartaWiki({

@@ -20,7 +20,7 @@ class _VistaPrincipalState extends State<VistaPrincipal> {
   int _indiceActual = 0;
   
   // --- LÓGICA DE ESTADO ---
-  bool _usuarioLogueado = true; // Empezamos en Modo Invitado
+  bool _usuarioLogueado = false; // Empezamos en Modo Invitado
   String _nombreUsuario = "Invitado"; // Para mostrar en el Drawer
 
   // --- LAS VISTAS ---
@@ -51,33 +51,6 @@ class _VistaPrincipalState extends State<VistaPrincipal> {
     Navigator.pop(context); // Cierra el Drawer
   }
 
-  // --- FUNCIÓN PARA CONECTAR EL LOGIN ---
-  void _abrirDialogoLogin() async {
-    final resultado = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => const DialogoLogin(),
-    );
-
-    // Si el diálogo nos devuelve un mapa indicando éxito (nuestro mock)
-    if (resultado != null && resultado['exito'] == true) {
-      setState(() {
-        _usuarioLogueado = true;
-        // Asignamos un nombre inventado por ahora (luego vendrá de la API)
-        _nombreUsuario = "JugadorAxia"; 
-      });
-      // Opcional: Mostrar un pequeño aviso de bienvenida
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado['mensaje'] ?? 'Sesión iniciada')),
-        );
-      }
-    }
-  }
-
   // --- FUNCIÓN PARA CERRAR SESIÓN ---
   void _cerrarSesion() {
     setState(() {
@@ -102,7 +75,7 @@ class _VistaPrincipalState extends State<VistaPrincipal> {
           // Renderizado condicional en la AppBar
           if (!_usuarioLogueado) ...[
             TextButton(
-              onPressed: _abrirDialogoLogin, // Usamos nuestra nueva función
+              onPressed: _ejecutarLogin, 
               child: Text(
                 'Iniciar sesión', 
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)
@@ -266,4 +239,37 @@ class _VistaPrincipalState extends State<VistaPrincipal> {
       body: _todasLasVistas[_indiceActual],
     );
   }
+
+// Esta es la única función que necesitas para el login
+Future<void> _ejecutarLogin() async {
+  // Volvemos a usar showModalBottomSheet para que tenga su widget Material base
+  // y mantenga la estética de menú inferior que ya habías diseñado.
+  final String? usuarioRecuperado = await showModalBottomSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) => const DialogoLogin(),
+  );
+
+  // El resto de la lógica se queda exactamente igual
+  if (usuarioRecuperado != null) {
+    setState(() {
+      _usuarioLogueado = true;
+      _nombreUsuario = usuarioRecuperado.split('@')[0]; 
+      
+      // Actualizamos la vista del chat
+      _todasLasVistas[2] = VistaChat(nombreUsuario: _nombreUsuario);
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('¡Bienvenido, $_nombreUsuario!')),
+      );
+    }
+  }
+}
+
+
 }
