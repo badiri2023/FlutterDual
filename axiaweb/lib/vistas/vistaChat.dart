@@ -33,13 +33,19 @@ class _VistaChatState extends State<VistaChat> {
     super.dispose();
   }
 
-  // 1. CARGAR HISTORIAL (Lo que ya pasó)
+// CARGAR HISTORIAL
   Future<void> _cargarMensajesPrevios() async {
-    // Nota: Debes implementar 'obtenerHistorialChat' en ApiServicio
     final resultado = await ApiServicio.obtenerHistorialChat();
     if (resultado['exito']) {
       setState(() {
-        _mensajes.addAll(List<Map<String, dynamic>>.from(resultado['datos']));
+        // "Traducimos" lo que manda el servidor (inglés) a lo que pide tu vista (español)
+        final mensajesTraducidos = (resultado['datos'] as List).map((m) => {
+          'usuario': m['username'] ?? 'Desconocido',
+          'texto': m['text'] ?? '',
+          'fecha': m['createdAt'] ?? DateTime.now().toIso8601String(),
+        }).toList();
+
+        _mensajes.addAll(mensajesTraducidos);
       });
       _bajarAlFinal();
     }

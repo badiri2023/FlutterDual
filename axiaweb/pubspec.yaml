@@ -26,5 +26,5 @@ flutter:
 
   # REGISTRO DE ASSETS: Aquí es donde la APP buscará tus sonidos
   assets:
-    - assets/sonidos/
+    - assets/
     # - assets/imagenes/ (Descomenta esto cuando tengas fotos de cartas)

@@ -63,6 +63,63 @@ class ApiServicio {
       return {'exito': false, 'mensaje': 'Error de conexión'};
     }
   }
+
+// En api_servicio.dart
+
+// 1. Obtener monedas (suponiendo que tienes un endpoint de perfil)
+static Future<int> obtenerMonedasUsuario() async {
+  try {
+    final respuesta = await http.get(Uri.parse('$_urlBase/user/profile'), headers: _getHeaders());
+    if (respuesta.statusCode == 200) {
+      final datos = jsonDecode(respuesta.body);
+      return datos['coins'] ?? 500; // Si falla, devolvemos 500 por defecto
+    }
+  } catch (e) {
+    print("Error obteniendo monedas: $e");
+  }
+  return 500;
+}
+
+// --- ABRIR SOBRE DE EXPANSIÓN ---
+  static Future<Map<String, dynamic>> abrirSobre(String expansion) async {
+    try {
+      // Tu endpoint en C# es GET api/Card/open/{expansion}
+      final respuesta = await http.get(
+        Uri.parse('$_urlBase/Card/open/$expansion'),
+        headers: _getHeaders(), // Vital para que pase el [Authorize]
+      );
+
+      if (respuesta.statusCode == 200) {
+        final List<dynamic> datosJson = jsonDecode(respuesta.body);
+        
+        // Mapeamos el JSON recibido a tu modelo CartaWiki
+        List<CartaWiki> cartasObtenidas = datosJson.map((json) => CartaWiki(
+          id: json['id'].toString(),
+          nombre: json['name'] ?? 'Sin nombre',
+          descripcion: json['description'] ?? '',
+          ataque: json['attack'] ?? 0,
+          vida: json['defense'] ?? 0,
+          mana: json['mana'] ?? 0,
+          rareza: _traducirRareza(json['rarity']),
+          expansion: json['expansion'] ?? 'Base',
+          habilidad: json['ability'] != null 
+              ? "${json['ability']['name']}: ${json['ability']['description']}" 
+              : "Sin habilidad",
+          imagenUrl: (json['imageUrl'] != null && json['imageUrl'].toString().trim().isNotEmpty)
+              ? "https://aixec-card-images.s3.eu-north-1.amazonaws.com/card${json['id'].toString().padLeft(3, '0')}.jpg"
+              : "",
+        )).toList();
+
+        return {'exito': true, 'cartas': cartasObtenidas};
+      } else {
+        return {'exito': false, 'mensaje': 'Error del servidor: ${respuesta.statusCode}'};
+      }
+    } catch (e) {
+      return {'exito': false, 'mensaje': 'Error de conexión: $e'};
+    }
+  }
+
+
   // --- INVENTARIO (Corregido para tu modelo CartaWiki) ---
   static Future<Map<String, dynamic>> obtenerInventario() async {
     try {
@@ -98,34 +155,68 @@ class ApiServicio {
       return {'exito': false, 'mensaje': 'Error de conexión'};
     }
   }
-
-  // --- GUARDAR MAZO ---
-  static Future<Map<String, dynamic>> guardarMazo(List<String> mazoIds) async {
+  // obtener historial del chat
+  static Future<Map<String, dynamic>> obtenerHistorialChat() async {
     try {
-      final respuesta = await http.post(
-        Uri.parse('$_urlBase/mazos/guardar'),
-        headers: _getHeaders(),
-        body: jsonEncode({'mazo': mazoIds}),
-      );
-      return {'exito': true, 'mensaje': 'Mazo sincronizado'};
+      final response = await http.get(Uri.parse('$_urlBase/chat/history'),
+      headers: _getHeaders(),);
+      
+      if (response.statusCode == 200) {
+        return {'exito': true, 'datos': json.decode(response.body)};
+      }
+      return {'exito': false, 'mensaje': 'Error al cargar historial'};
     } catch (e) {
-      return {'exito': true, 'mensaje': 'Mazo guardado (Local)'};
+      return {'exito': false, 'mensaje': e.toString()};
     }
   }
 
-  // --- HISTORIAL CHAT ---
-  static Future<Map<String, dynamic>> obtenerHistorialChat() async {
+// --- GUARDAR O ACTUALIZAR DECK ---
+  static Future<Map<String, dynamic>> guardarMazo(List<int> cardIds, int? deckId) async {
+    try {
+      final url = deckId == null 
+          ? '$_urlBase/Deck' 
+          : '$_urlBase/Deck/$deckId';
+
+      final body = jsonEncode({
+        "name": "Mi Mazo Principal", 
+        "cardIds": cardIds           
+      });
+
+      http.Response respuesta;
+      if (deckId == null) {
+        respuesta = await http.post(Uri.parse(url), headers: _getHeaders(), body: body);
+      } else {
+        respuesta = await http.put(Uri.parse(url), headers: _getHeaders(), body: body);
+      }
+
+      if (respuesta.statusCode == 200) {
+        return {'exito': true, 'mensaje': 'Mazo guardado correctamente'};
+      }
+      return {'exito': false, 'mensaje': 'Error al guardar: ${respuesta.statusCode}'};
+    } catch (e) {
+      return {'exito': false, 'mensaje': e.toString()};
+    }
+  }
+  
+// --- OBTENER MI DECK ---
+  static Future<Map<String, dynamic>> obtenerMiDeck() async {
     try {
       final respuesta = await http.get(
-        Uri.parse('$_urlBase/chat/historial'),
+        Uri.parse('$_urlBase/Deck'),
         headers: _getHeaders(),
       );
+
       if (respuesta.statusCode == 200) {
-        return {'exito': true, 'datos': jsonDecode(respuesta.body)};
+        List<dynamic> decks = jsonDecode(respuesta.body);
+        if (decks.isNotEmpty) {
+          return {'exito': true, 'datos': decks[0]}; 
+        }
+        return {'exito': false, 'mensaje': 'No tienes mazos creados'};
       }
-    } catch (e) {}
-    // Retorno mock para que la vista no pete si no hay historial aún
-    return {'exito': true, 'datos': []};
+      return {'exito': false, 'mensaje': 'Error del servidor: ${respuesta.statusCode}'};
+    } catch (e) {
+      return {'exito': false, 'mensaje': e.toString()};
+    }
   }
 
 // --- CATÁLOGO WIKI ---
@@ -159,7 +250,7 @@ class ApiServicio {
               ? "https://aixec-card-images.s3.eu-north-1.amazonaws.com/card${json['id'].toString().padLeft(3, '0')}.jpg"
               : "",
             )).toList();
-print("URL DE LA PRIMERA CARTA: ${catalogo.first.imagenUrl}");
+        print("URL DE LA PRIMERA CARTA: ${catalogo.first.imagenUrl}");
         return {'exito': true, 'datos': catalogo};
       } else {
         

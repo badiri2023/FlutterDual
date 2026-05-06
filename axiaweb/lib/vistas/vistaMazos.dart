@@ -14,10 +14,8 @@ class _VistaMazosState extends State<VistaMazos> {
   bool _cargando = true;
   bool _guardando = false;
 
-  // El mazo que estamos editando actualmente
+  int? _deckIdActual; 
   List<CartaWiki> _mazoTemporal = [];
-  
-  // Lo que el usuario posee
   Map<String, int> _inventarioCantidades = {};
   Map<String, CartaWiki> _bdCartas = {}; 
 
@@ -28,23 +26,45 @@ class _VistaMazosState extends State<VistaMazos> {
   }
 
   Future<void> _cargarDatos() async {
-    final respuesta = await ApiServicio.obtenerInventario();
+    final resInventario = await ApiServicio.obtenerInventario();
 
-    if (respuesta['exito']) {
-      List<CartaWiki> cartasInventario = respuesta['inventario'];
-      Map<String, int> cantidades = respuesta['cantidades'];
+    if (resInventario['exito']) {
+      List<CartaWiki> cartasInventario = resInventario['inventario'];
+      Map<String, int> cantidades = resInventario['cantidades'];
 
       setState(() {
         for (var c in cartasInventario) {
           _bdCartas[c.id] = c;
         }
         _inventarioCantidades = cantidades;
-        _cargando = false;
       });
+
+      // Cargamos el Deck guardado del servidor
+      final resDeck = await ApiServicio.obtenerMiDeck();
+      if (resDeck['exito']) {
+        final datosDeck = resDeck['datos'];
+        final List<dynamic> cartasEnDeck = datosDeck['cards']; 
+        
+        setState(() {
+          _deckIdActual = datosDeck['id']; 
+          _mazoTemporal = []; // Limpiamos por si acaso
+          
+          // FORMA SEGURA: Evita que la app pete si falta alguna carta
+          for (var c in cartasEnDeck) {
+            String idCarta = c['id'].toString();
+            if (_bdCartas.containsKey(idCarta)) {
+              _mazoTemporal.add(_bdCartas[idCarta]!);
+            }
+          }
+        });
+      }
+      
+      setState(() => _cargando = false);
+      
     } else {
       setState(() => _cargando = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${respuesta['mensaje']}"))
+        SnackBar(content: Text("Error al cargar cartas: ${resInventario['mensaje']}")),
       );
     }
   }
@@ -69,13 +89,19 @@ class _VistaMazosState extends State<VistaMazos> {
   Future<void> _guardarCambios() async {
     setState(() => _guardando = true);
     
-    List<String> idsParaEnviar = _mazoTemporal.map((c) => c.id).toList();
-    final res = await ApiServicio.guardarMazo(idsParaEnviar);
+    // Mapeo perfecto a Integers para C#
+    List<int> idsParaEnviar = _mazoTemporal.map((c) => int.parse(c.id)).toList();
+    
+    // Pasamos tanto la lista como el ID actual
+    final res = await ApiServicio.guardarMazo(idsParaEnviar, _deckIdActual);
 
     setState(() => _guardando = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(res['mensaje']), backgroundColor: res['exito'] ? Colors.green : Colors.red),
+      SnackBar(
+        content: Text(res['mensaje']), 
+        backgroundColor: res['exito'] ? Colors.green : Colors.red
+      ),
     );
   }
 
