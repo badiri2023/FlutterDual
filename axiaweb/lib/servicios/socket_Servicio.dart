@@ -4,7 +4,6 @@ import 'package:signalr_netcore/signalr_client.dart';
 class SocketServicio {
   HubConnection? _hubConnection;
   
-  // OJO: Usamos http:// en lugar de ws:// para SignalR
   final String _urlSocket = 'http://13.49.2.229:5000/ws/chat'; 
 
   final _streamController = StreamController<String>.broadcast();

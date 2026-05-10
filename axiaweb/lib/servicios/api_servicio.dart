@@ -24,7 +24,6 @@ class ApiServicio {
       final respuesta = await http.post(
         Uri.parse('$_urlBase/auth/login'),
         headers: {'Content-Type': 'application/json'},
-        // CORREGIDO: 'eassword' a 'password'
         body: jsonEncode({'email': correo, 'password': password}), 
       );
 
@@ -41,14 +40,28 @@ class ApiServicio {
       return {'exito': false, 'mensaje': 'Error de conexión con el servidor'};
     }
   }
-
+  // Borramos el token fantasma
+  static void cerrarSesion() {
+      _token = null; 
+    }
+  // --- RANKING ---
+  static Future<Map<String, dynamic>> obtenerRanking() async {
+    try {
+      final respuesta = await http.get(Uri.parse('$_urlBase/Ranking'), headers: _getHeaders());
+      if (respuesta.statusCode == 200) {
+        return {'exito': true, 'ranking': jsonDecode(respuesta.body)}; // Clave 'ranking'
+      }
+      return {'exito': false, 'mensaje': 'Error del servidor'};
+    } catch (e) {
+      return {'exito': false, 'mensaje': e.toString()};
+    }
+  }
   // --- REGISTRO ---
   static Future<Map<String, dynamic>> registrarUsuario(String nombre, String correo, String password) async {
     try {
       final respuesta = await http.post(
         Uri.parse('$_urlBase/auth/register'),
         headers: {'Content-Type': 'application/json'},
-        // Esto está perfecto en minúsculas
         body: jsonEncode({'username': nombre, 'email': correo, 'password': password}),
       );
 
@@ -66,44 +79,122 @@ class ApiServicio {
 
 // En api_servicio.dart
 
-// 1. Obtener monedas (suponiendo que tienes un endpoint de perfil)
+// Obtener monedas
 static Future<int> obtenerMonedasUsuario() async {
   try {
-    final respuesta = await http.get(Uri.parse('$_urlBase/user/profile'), headers: _getHeaders());
+    final respuesta = await http.get(Uri.parse('$_urlBase/auth/perfil'), headers: _getHeaders());
     if (respuesta.statusCode == 200) {
       final datos = jsonDecode(respuesta.body);
-      return datos['coins'] ?? 500; // Si falla, devolvemos 500 por defecto
+      return datos['money'] ?? datos['Money'] ?? 0;
     }
   } catch (e) {
     print("Error obteniendo monedas: $e");
   }
   return 500;
 }
+// --- OBTENER PERFIL COMPLETO  ---
+static Future<Map<String, dynamic>> obtenerPerfilCompleto() async {
+  try {
+    // Disparamos las 3 peticiones de forma SIMULTÁNEA
+    final respuestas = await Future.wait([
+      http.get(Uri.parse('$_urlBase/auth/perfil'), headers: _getHeaders()),
+      http.get(Uri.parse('$_urlBase/Ranking'), headers: _getHeaders()),
+      http.get(Uri.parse('$_urlBase/Card/my-cards'), headers: _getHeaders()),
+    ]);
 
-// --- ABRIR SOBRE DE EXPANSIÓN ---
+    final resPerfil = respuestas[0];
+    final resRanking = respuestas[1];
+    final resCartas = respuestas[2];
+
+    if (resPerfil.statusCode == 200) {
+      final datosPerfil = jsonDecode(resPerfil.body);
+      String miUsuario = datosPerfil['username'] ?? datosPerfil['Username'];
+
+      // Extraemos Victorias y Nivel del Ranking
+      int victorias = 0;
+      int partidasJugadas = 0;
+      int nivel = 1;
+      
+      if (resRanking.statusCode == 200) {
+        List<dynamic> rankingCompleto = jsonDecode(resRanking.body);
+        // Buscamos a nuestro usuario dentro de la lista del ranking
+        var misDatosRanking = rankingCompleto.firstWhere(
+          (user) => user['username'] == miUsuario || user['Username'] == miUsuario, 
+          orElse: () => null
+        );
+        
+        if (misDatosRanking != null) {
+          victorias = misDatosRanking['wonMatches'] ?? misDatosRanking['WonMatches'] ?? 0;
+          partidasJugadas = misDatosRanking['playedMatches'] ?? misDatosRanking['PlayedMatches'] ?? 0;
+          nivel = misDatosRanking['level'] ?? misDatosRanking['Level'] ?? 1;
+        }
+      }
+
+      //Calculamos el Total de Cartas sumando las cantidades del inventario
+      int totalCartas = 0;
+      if (resCartas.statusCode == 200) {
+        List<dynamic> misCartas = jsonDecode(resCartas.body);
+        for (var item in misCartas) {
+          totalCartas += (item['quantity'] ?? item['Quantity'] ?? 0) as int;
+        }
+      }
+
+      //Devolvemos un solo objeto JSON unificado a la vista
+      return {
+        'exito': true, 
+        'datos': {
+          'username': miUsuario,
+          'level': nivel,
+          'wins': victorias,
+          'played': partidasJugadas,
+          'totalCards': totalCartas,
+          // El historial es falso por ahora, ya que el server aún no guarda partidas terminadas
+          'matchHistory': [
+            {'opponent': 'Bot_Alpha', 'result': 'Victoria', 'date': 'Hoy'},
+            {'opponent': 'Jugador_Misterioso', 'result': 'Derrota', 'date': 'Ayer'},
+          ]
+        }
+      };
+    }
+    
+    return {'exito': false, 'mensaje': 'No se pudo cargar el perfil'};
+  } catch (e) {
+    return {'exito': false, 'mensaje': 'Error de conexión: $e'};
+  }
+}
+// --- ABRIR SOBRE DE LA TIENDA ---
   static Future<Map<String, dynamic>> abrirSobre(String expansion) async {
     try {
-      // Tu endpoint en C# es GET api/Card/open/{expansion}
+      // Limpiamos la URL por seguridad
+      String expansionLimpia = Uri.encodeComponent(expansion.trim());
       final respuesta = await http.get(
-        Uri.parse('$_urlBase/Card/open/$expansion'),
-        headers: _getHeaders(), // Vital para que pase el [Authorize]
+        Uri.parse('$_urlBase/Card/open/$expansionLimpia'), 
+        headers: _getHeaders(),
       );
 
       if (respuesta.statusCode == 200) {
-        final List<dynamic> datosJson = jsonDecode(respuesta.body);
+        final datos = jsonDecode(respuesta.body);
         
-        // Mapeamos el JSON recibido a tu modelo CartaWiki
-        List<CartaWiki> cartasObtenidas = datosJson.map((json) => CartaWiki(
+        List<dynamic> listaJson = [];
+        
+        // Verifica si la API devuelve una lista directa o un objeto con clave 'cards'
+        if (datos is List) {
+          listaJson = datos;
+        } else if (datos['cards'] != null) {
+          listaJson = datos['cards'];
+        }
+
+        List<CartaWiki> cartasObtenidas = listaJson.map((json) => CartaWiki(
           id: json['id'].toString(),
           nombre: json['name'] ?? 'Sin nombre',
           descripcion: json['description'] ?? '',
           ataque: json['attack'] ?? 0,
           vida: json['defense'] ?? 0,
           mana: json['mana'] ?? 0,
-          rareza: _traducirRareza(json['rarity']),
-          expansion: json['expansion'] ?? 'Base',
+          rareza: _traducirRareza(json['rarity']), 
+          expansion: json['expansion'] ?? expansion,
           habilidad: json['ability'] != null 
-              ? "${json['ability']['name']}: ${json['ability']['description']}" 
+              ? "${json['ability']['name'] ?? ''}: ${json['ability']['description'] ?? ''}" 
               : "Sin habilidad",
           imagenUrl: (json['imageUrl'] != null && json['imageUrl'].toString().trim().isNotEmpty)
               ? "https://aixec-card-images.s3.eu-north-1.amazonaws.com/card${json['id'].toString().padLeft(3, '0')}.jpg"
@@ -112,49 +203,65 @@ static Future<int> obtenerMonedasUsuario() async {
 
         return {'exito': true, 'cartas': cartasObtenidas};
       } else {
+        print("Error del servidor al abrir sobre: ${respuesta.statusCode} - ${respuesta.body}");
         return {'exito': false, 'mensaje': 'Error del servidor: ${respuesta.statusCode}'};
       }
     } catch (e) {
+      print("Fallo crítico en la app (abrirSobre): $e");
       return {'exito': false, 'mensaje': 'Error de conexión: $e'};
     }
   }
 
 
-  // --- INVENTARIO (Corregido para tu modelo CartaWiki) ---
-  static Future<Map<String, dynamic>> obtenerInventario() async {
-    try {
-      final respuesta = await http.get(
-        Uri.parse('$_urlBase/Card/my-cards'),
-        headers: _getHeaders(),
-      );
+// --- INVENTARIO ---
+static Future<Map<String, dynamic>> obtenerInventario() async {
+  try {
+    final respuesta = await http.get(
+      Uri.parse('$_urlBase/card/my-cards'),
+      headers: _getHeaders(),
+    );
 
-      if (respuesta.statusCode == 200) {
-        List<dynamic> jsonList = jsonDecode(respuesta.body);
-        
-        List<CartaWiki> inventario = jsonList.map((json) => CartaWiki(
-          id: json['id'].toString(), 
-          nombre: json['name'] ?? '',
-          descripcion: json['description'] ?? '',
-          ataque: json['attack'] ?? 0,
-          vida: json['defense'] ?? 0, // Usamos defense para tu campo vida
-          mana: json['mana'] ?? 1, 
-          rareza: _traducirRareza(json['rarity']),
-          expansion: json['expansion'] ?? 'Base',
-          habilidad: json['ability']?['name'] ?? '', 
-        )).toList();
+    if (respuesta.statusCode == 200) {
+      List<dynamic> jsonList = jsonDecode(respuesta.body);
 
-        Map<String, int> cantidades = {};
-        for (var item in jsonList) {
-          cantidades[item['id'].toString()] = item['quantity'] ?? 1;
-        }
+      List<CartaWiki> inventario = jsonList.map((json) => CartaWiki(
+        id: json['id'].toString(),
+        nombre: json['name'] ?? '',
+        descripcion: json['description'] ?? '',
+        ataque: json['attack'] ?? 0,
+        vida: json['defense'] ?? 0,
+        mana: json['mana'] ?? 1,
+        rareza: _traducirRareza(json['rarity']),
+        expansion: json['expansion'] ?? 'Base',
+        habilidad: json['ability']?['name'] ?? '',
+        imagenUrl: "https://aixec-card-images.s3.eu-north-1.amazonaws.com/card${json['id'].toString().padLeft(3, '0')}.jpg",
 
-        return {'exito': true, 'inventario': inventario, 'cantidades': cantidades};
+        /*imagenUrl: (json['imageUrl'] != null && json['imageUrl'].toString().trim().isNotEmpty)
+            ? "https://aixec-card-images.s3.eu-north-1.amazonaws.com/card${json['id'].toString().padLeft(3, '0')}.jpg"
+            : "",*/
+      )).toList();
+
+      Map<String, int> cantidades = {};
+      for (var item in jsonList) {
+        cantidades[item['id'].toString()] = item['quantity'] ?? 1;
       }
-      return {'exito': false, 'mensaje': 'No se pudieron cargar tus cartas'};
-    } catch (e) {
-      return {'exito': false, 'mensaje': 'Error de conexión'};
+      if (inventario.isNotEmpty) {
+        print("DEBUG inventario[0].imagenUrl = ${inventario.first.imagenUrl}");
+        // imprime algunas más por si acaso
+        for (int i = 0; i < (inventario.length < 5 ? inventario.length : 5); i++) {
+          print("DEBUG inventario[$i].id=${inventario[i].id} url=${inventario[i].imagenUrl}");
+        }
+      }
+
+      return {'exito': true, 'inventario': inventario, 'cantidades': cantidades};
     }
+    return {'exito': false, 'mensaje': 'No se pudieron cargar tus cartas'};
+  } catch (e) {
+    return {'exito': false, 'mensaje': 'Error de conexión'};
   }
+}
+
+  
   // obtener historial del chat
   static Future<Map<String, dynamic>> obtenerHistorialChat() async {
     try {
@@ -178,7 +285,7 @@ static Future<int> obtenerMonedasUsuario() async {
           : '$_urlBase/Deck/$deckId';
 
       final body = jsonEncode({
-        "name": "Mi Mazo Principal", 
+        "name": "mazo principal", 
         "cardIds": cardIds           
       });
 

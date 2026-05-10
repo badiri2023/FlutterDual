@@ -86,6 +86,31 @@ class _VistaMazosState extends State<VistaMazos> {
     });
   }
 
+void _onGuardarPressed() {
+  if (_mazoTemporal.length != 20) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Mazo incompleto'),
+          content: Text('Tu mazo tiene ${_mazoTemporal.length} cartas. Se requieren 20 cartas para guardar.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
+    return;
+  }
+
+  // Si llega aquí, tiene 20 cartas: procedemos a guardar
+  _guardarCambios();
+}
+
+
   Future<void> _guardarCambios() async {
     setState(() => _guardando = true);
     
@@ -115,14 +140,20 @@ class _VistaMazosState extends State<VistaMazos> {
       appBar: AppBar(
         title: const Text("Gestión de Mazos"),
         actions: [
-          _guardando 
-            ? const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white)))
+          _guardando
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+              )
             : IconButton(
-                icon: const Icon(Icons.save), 
-                onPressed: _guardarCambios,
+                icon: const Icon(Icons.save),
+                onPressed: _onGuardarPressed,
                 tooltip: "Guardar mazo en el servidor",
               )
         ],
+
       ),
       body: Row(
         children: [

@@ -11,8 +11,6 @@ class DialogoLogin extends StatefulWidget {
 class _DialogoLoginState extends State<DialogoLogin> {
   final _formKey = GlobalKey<FormState>();
   
-  // Fíjate que eliminamos el controlador de recuperación de aquí.
-  // Ahora este widget solo se preocupa de sus propias cosas (el Login).
   final TextEditingController _emailLoginController = TextEditingController();
   final TextEditingController _passwordLoginController = TextEditingController();
 
@@ -38,9 +36,6 @@ class _DialogoLoginState extends State<DialogoLogin> {
 
       if (resultado['exito'] == true) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Bienvenido de vuelta!')),
-          );
           Navigator.pop(context, _emailLoginController.text);
         }
       } else {
@@ -54,15 +49,15 @@ class _DialogoLoginState extends State<DialogoLogin> {
   }
 
   void _mostrarRecuperarPassword() {
-    // Cerramos el Dialogo de Login (esto destruye sus controladores)
+    // Cerramos el Dialogo de Login
     Navigator.pop(context);
     
-    // Abrimos el nuevo Dialogo (que ahora es un widget independiente con su propio controlador)
+    // Abrimos el nuevo Dialogo 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => const DialogoRecuperarPassword(), // Llamamos al nuevo widget aquí
+      builder: (context) => const DialogoRecuperarPassword(), 
     );
   }
 
@@ -128,8 +123,6 @@ class _DialogoLoginState extends State<DialogoLogin> {
   }
 }
 
-// --- NUEVO WIDGET INDEPENDIENTE ---
-// Al ser un StatefulWidget aparte, tiene su propio ciclo de vida y no choca con el Login.
 class DialogoRecuperarPassword extends StatefulWidget {
   const DialogoRecuperarPassword({super.key});
 
@@ -138,7 +131,6 @@ class DialogoRecuperarPassword extends StatefulWidget {
 }
 
 class _DialogoRecuperarPasswordState extends State<DialogoRecuperarPassword> {
-  // Ahora este controlador vive seguro aquí adentro
   final TextEditingController _emailRecuperacionController = TextEditingController();
 
   @override
@@ -179,7 +171,7 @@ class _DialogoRecuperarPasswordState extends State<DialogoRecuperarPassword> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Correo de recuperación enviado. Revisa tu bandeja de entrada.')),
                 );
-                Navigator.pop(context); // Cierra este modal
+                Navigator.pop(context); 
               },
               child: const Text('ENVIAR ENLACE'),
             ),
