@@ -33,8 +33,7 @@ class _VistaChatState extends State<VistaChat> {
     _cargarMensajesPrevios();
   }
 
-  // --- ESTA ES LA PIEZA QUE FALTABA ---
-  // Detecta cambios en los parámetros del Widget (como estaLogueado)
+  // Detecta cambios en los parámetros del Widget
   @override
   void didUpdateWidget(covariant VistaChat oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -46,8 +45,8 @@ class _VistaChatState extends State<VistaChat> {
     // Si antes estaba logueado y ahora no -> DESCONECTAR
     else if (oldWidget.estaLogueado && !widget.estaLogueado) {
       _socket.desconectar();
-      _mensajes.clear(); // Opcional: limpiar mensajes locales al salir
-      _cargarMensajesPrevios(); // Recargar historial limpio
+      _mensajes.clear();
+      _cargarMensajesPrevios(); 
     }
   }
 
@@ -72,9 +71,6 @@ class _VistaChatState extends State<VistaChat> {
       _bajarAlFinal();
     });
   }
-
-  // ... resto de métodos (cargarMensajesPrevios, enviar, etc.) se mantienen igual ...
-  // Asegúrate de que el método _enviar verifique widget.estaLogueado
 
   Future<void> _cargarMensajesPrevios() async {
     final resultado = await ApiServicio.obtenerHistorialChat();
@@ -132,7 +128,7 @@ class _VistaChatState extends State<VistaChat> {
               // ASÍ DEBE QUEDAR
               itemBuilder: (context, index) {
                 final m = _mensajes[index];
-                return _buildBurbuja(m); // <--- Solo pasas 'm', nada más.
+                return _buildBurbuja(m);
               },
             ),
           ),

@@ -47,9 +47,9 @@ class _VistaMazosState extends State<VistaMazos> {
         
         setState(() {
           _deckIdActual = datosDeck['id']; 
-          _mazoTemporal = []; // Limpiamos por si acaso
+          _mazoTemporal = [];
           
-          // FORMA SEGURA: Evita que la app pete si falta alguna carta
+          // Evita que la app pete si falta alguna carta
           for (var c in cartasEnDeck) {
             String idCarta = c['id'].toString();
             if (_bdCartas.containsKey(idCarta)) {
@@ -69,16 +69,17 @@ class _VistaMazosState extends State<VistaMazos> {
     }
   }
 
-  void _anadirAlMazo(String id) {
-    int cantidadEnMazo = _mazoTemporal.where((c) => c.id == id).length;
-    int totalPoseidas = _inventarioCantidades[id] ?? 0;
+void _anadirAlMazo(String id) {
+  int cantidadEnMazo = _mazoTemporal.where((c) => c.id == id).length;
+  int totalPoseidas = _inventarioCantidades[id] ?? 0;
 
-    if (cantidadEnMazo < totalPoseidas) {
-      setState(() {
-        _mazoTemporal.add(_bdCartas[id]!);
-      });
-    }
-  }
+  //Máximo 3 copias O el total que poseas
+  if (cantidadEnMazo < totalPoseidas && cantidadEnMazo < 3) {
+    setState(() {
+      _mazoTemporal.add(_bdCartas[id]!);
+    });
+  } 
+}
 
   void _quitarDelMazo(int index) {
     setState(() {
@@ -109,7 +110,6 @@ void _onGuardarPressed() {
   // Si llega aquí, tiene 20 cartas: procedemos a guardar
   _guardarCambios();
 }
-
 
   Future<void> _guardarCambios() async {
     setState(() => _guardando = true);
@@ -159,60 +159,88 @@ void _onGuardarPressed() {
         children: [
           // --- COLUMNA IZQUIERDA: INVENTARIO ---
           Expanded(
-            flex: 1,
-            child: Container(
-              color: Colors.black12,
-              child: Column(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text("MI COLECCIÓN", style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(10),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.7,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount: _bdCartas.length,
-                      itemBuilder: (context, i) {
-                        String id = _bdCartas.keys.elementAt(i);
-                        CartaWiki carta = _bdCartas[id]!;
-                        int enMazo = _mazoTemporal.where((c) => c.id == id).length;
-                        int disponibles = (_inventarioCantidades[id] ?? 0) - enMazo;
+            child: GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3, 
+                childAspectRatio: 0.7, 
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: _bdCartas.length,
+              itemBuilder: (context, i) {
+                String id = _bdCartas.keys.elementAt(i);
+                CartaWiki carta = _bdCartas[id]!;
+                int enMazo = _mazoTemporal.where((c) => c.id == id).length;
+                int disponibles = (_inventarioCantidades[id] ?? 0) - enMazo;
+                bool limiteAlcanzado = enMazo >= 3;
+                bool puedeAnadir = disponibles > 0 && !limiteAlcanzado;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Opacity(
+                      opacity: puedeAnadir ? 1.0 : 0.45,
+                      child: WidgetCartaPrefab(carta: carta),
+                    ),
 
-                        return GestureDetector(
-                          onTap: disponibles > 0 ? () => _anadirAlMazo(id) : null,
-                          child: Stack(
-                            children: [
-                              Opacity(
-                                opacity: disponibles > 0 ? 1.0 : 0.4,
-                                child: WidgetCartaPrefab(carta: carta),
-                              ),
-                              Positioned(
-                                bottom: 5, right: 5,
-                                child: CircleAvatar(
-                                  radius: 12,
-                                  backgroundColor: Colors.blue,
-                                  child: Text('$disponibles', style: const TextStyle(fontSize: 12, color: Colors.white)),
-                                ),
+                    // Indicador de cantidad
+                    Positioned(
+                      top: -5,
+                      left: -5,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                        ),
+                        child: Text(
+                          '$disponibles',
+                          style: const TextStyle(
+                            fontSize: 10, 
+                            color: Colors.white, 
+                            fontWeight: FontWeight.bold
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    //Botón de añadir
+                    Positioned(
+                      bottom: -2,
+                      right: -2,
+                      child: GestureDetector(
+                        onTap: puedeAnadir ? () => _anadirAlMazo(id) : null,
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: puedeAnadir ? Colors.green : Colors.blueGrey,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black45,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
                               )
                             ],
                           ),
-                        );
-                      },
+                          child: Icon(
+                            puedeAnadir ? Icons.add : Icons.block,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                );
+              },
             ),
-          ),
-
-          const VerticalDivider(width: 1, thickness: 1),
-
+          ),    
+     
           // --- COLUMNA DERECHA: MAZO ---
           Expanded(
             flex: 1,

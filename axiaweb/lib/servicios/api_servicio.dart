@@ -76,8 +76,22 @@ class ApiServicio {
       return {'exito': false, 'mensaje': 'Error de conexión'};
     }
   }
+static Future<Map<String, dynamic>> generarMazoInicial(String nombreMazo) async {
+  try {
+    final respuesta = await http.post(
+      Uri.parse('$_urlBase/deck/generate'),
+      headers: _getHeaders(),
+      body: jsonEncode({'name': nombreMazo}),
+    );
 
-// En api_servicio.dart
+    if (respuesta.statusCode == 200) {
+      return {'exito': true, 'mensaje': '¡Mazo inicial creado!'};
+    }
+    return {'exito': false, 'mensaje': 'Error al generar mazo'};
+  } catch (e) {
+    return {'exito': false, 'mensaje': 'Error de conexión al generar mazo'};
+  }
+}
 
 // Obtener monedas
 static Future<int> obtenerMonedasUsuario() async {

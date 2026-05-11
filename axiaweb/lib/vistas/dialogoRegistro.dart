@@ -47,11 +47,12 @@ class _DialogoRegistroState extends State<DialogoRegistro> {
 
       // Evaluamos la respuesta del servidor
       if (resultado['exito'] == true) {
+        await ApiServicio.generarMazoInicial("Mazo de ${_nombreController.text}");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(resultado['mensaje'])), 
           );
-          Navigator.pop(context);
+          Navigator.pop(context,_emailController.text);
         }
       } else {
         if (mounted) {

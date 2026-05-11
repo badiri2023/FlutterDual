@@ -10,7 +10,7 @@ import 'dialogoLogin.dart';
 import 'dialogoRegistro.dart';
 import 'vistaAjustes.dart';
 import 'vistaRanking.dart';
-
+import '../servicios/api_servicio.dart';
 
 
 class VistaPrincipal extends StatefulWidget {
@@ -71,7 +71,7 @@ void initState() {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('AxiaWeb', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('AXIA', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (!_usuarioLogueado) ...[
