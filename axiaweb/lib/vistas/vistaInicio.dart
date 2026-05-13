@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class VistaInicio extends StatelessWidget {
   const VistaInicio({super.key});
+
+  Future<void> _lanzarURL() async {
+    final Uri url = Uri.parse('https://tu-sitio-web.com'); // Cambia por tu link
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('No se pudo abrir $url');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +51,20 @@ class VistaInicio extends StatelessWidget {
                 letterSpacing: 1.2,
               ),
             ),
+            const SizedBox(height: 10),
 
+            ElevatedButton.icon(
+              onPressed: _lanzarURL,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.language),
+              label: const Text("DOWNLOADL"),
+             ),     
+                
             const SizedBox(height: 40),
 
             Container(
