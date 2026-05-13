@@ -25,47 +25,43 @@ class _DialogoRegistroState extends State<DialogoRegistro> {
     super.dispose();
   }
 
-  //  Función que habla con el servidor
-  Future<void> _registrarUsuario() async {
-    if (_formKey.currentState!.validate()) {
+Future<void> _registrarUsuario() async {
+  if (_formKey.currentState!.validate()) {
+    setState(() {
+      _cargando = true;
+    });
+
+    final resultado = await ApiServicio.registrarUsuario(
+      _nombreController.text,
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    if (mounted) {
       setState(() {
-        _cargando = true;
+        _cargando = false;
       });
+    }
 
-      // LLAMADA REAL AL SERVIDOR
-      final resultado = await ApiServicio.registrarUsuario(
-        _nombreController.text,
-        _emailController.text,
-        _passwordController.text,
-      );
-
+    if (resultado['exito'] == true) {
       if (mounted) {
-        setState(() {
-          _cargando = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("¡Cuenta y mazo inicial creados con éxito!")), 
+        );
+        Navigator.pop(context, _emailController.text);
       }
-
-      // Evaluamos la respuesta del servidor
-      if (resultado['exito'] == true) {
-        await ApiServicio.generarMazoInicial("Mazo de ${_nombreController.text}");
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(resultado['mensaje'])), 
-          );
-          Navigator.pop(context,_emailController.text);
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(resultado['mensaje']), 
-              backgroundColor: Colors.red, 
-            ), 
-          );
-        }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(resultado['mensaje']), 
+            backgroundColor: Colors.red, 
+          ), 
+        );
       }
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

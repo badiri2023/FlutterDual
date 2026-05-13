@@ -22,12 +22,21 @@ class _VistaRankingState extends State<VistaRanking> {
   // Función para obtener los datos del servidor
   Future<void> _cargarRanking() async {
     setState(() => _cargando = true);
-    
+
     final res = await ApiServicio.obtenerRanking();
-    
+
     if (res['exito']) {
+      // Filtramos aquí los usuarios que no queremos mostrar
+      final List<dynamic> raw = res['ranking'] as List<dynamic>;
+      final List<String> ocultar = ['bot', 'admin']; // nombres a ocultar (minúsculas)
+
+      final List<dynamic> filtrado = raw.where((item) {
+        final nombre = (item['username'] ?? item['Username'] ?? '').toString().toLowerCase();
+        return !ocultar.contains(nombre);
+      }).toList();
+
       setState(() {
-        _listaRanking = res['ranking'];
+        _listaRanking = filtrado;
         _cargando = false;
       });
     } else {

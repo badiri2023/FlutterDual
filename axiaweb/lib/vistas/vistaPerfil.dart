@@ -37,7 +37,7 @@ class VistaPerfil extends StatelessWidget {
                         datos['username'].toString().toUpperCase(),
                         style: TextStyle(
                           fontSize: 28, 
-                          fontWeight: FontWeight.w900, // Corregido: sin el .black54 que daba error
+                          fontWeight: FontWeight.w900,
                           color: esOscuro ? Colors.white : Colors.black87,
                         ),
                       ),
@@ -69,54 +69,6 @@ class VistaPerfil extends StatelessWidget {
                 ),
               ),
 
-              // --- TÍTULO HISTORIAL ---
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  child: Text(
-                    "HISTORIAL DE PARTIDAS", 
-                    style: TextStyle(
-                      color: esOscuro ? Colors.amber : Colors.brown, 
-                      fontWeight: FontWeight.bold, 
-                      fontSize: 16
-                    )
-                  ),
-                ),
-              ),
-
-              // --- LISTA DE PARTIDAS ---
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final partida = datos['matchHistory'][index];
-                    bool gano = partida['result'] == "Victoria" || partida['result'] == "win";
-                    
-                    return Card(
-                      color: esOscuro ? Colors.white.withOpacity(0.05) : Colors.white,
-                      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: gano ? Colors.orange.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
-                          child: Icon(
-                            gano ? Icons.emoji_events : Icons.close,
-                            color: gano ? Colors.orange : Colors.grey,
-                          ),
-                        ),
-                        title: Text(
-                          "Vs ${partida['opponent']}", 
-                          style: TextStyle(fontWeight: FontWeight.bold, color: esOscuro ? Colors.white : Colors.black87)
-                        ),
-                        subtitle: Text(partida['date']),
-                        trailing: Text(
-                          partida['result'].toUpperCase(),
-                          style: TextStyle(color: gano ? Colors.orange : Colors.grey, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    );
-                  },
-                  childCount: (datos['matchHistory'] as List).length,
-                ),
-              ),
               const SliverToBoxAdapter(child: SizedBox(height: 50)),
             ],
           );

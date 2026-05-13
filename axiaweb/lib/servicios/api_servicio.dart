@@ -320,25 +320,75 @@ static Future<Map<String, dynamic>> obtenerInventario() async {
   }
   
 // --- OBTENER MI DECK ---
-  static Future<Map<String, dynamic>> obtenerMiDeck() async {
-    try {
-      final respuesta = await http.get(
-        Uri.parse('$_urlBase/Deck'),
-        headers: _getHeaders(),
-      );
+static Future<Map<String, dynamic>> obtenerMiDeck() async {
+  try {
+    final respuesta = await http.get(
+      Uri.parse('$_urlBase/Deck'),
+      headers: _getHeaders(),
+    );
 
-      if (respuesta.statusCode == 200) {
-        List<dynamic> decks = jsonDecode(respuesta.body);
-        if (decks.isNotEmpty) {
-          return {'exito': true, 'datos': decks[0]}; 
-        }
+    if (respuesta.statusCode == 200) {
+      final List<dynamic> decks = jsonDecode(respuesta.body);
+
+      // DEBUG: ver qué devuelve el servidor
+      print("DEBUG obtenerMiDeck body: ${respuesta.body}");
+
+      if (decks.isEmpty) {
         return {'exito': false, 'mensaje': 'No tienes mazos creados'};
       }
-      return {'exito': false, 'mensaje': 'Error del servidor: ${respuesta.statusCode}'};
-    } catch (e) {
-      return {'exito': false, 'mensaje': e.toString()};
+
+      final raw = decks[0] as Map<String, dynamic>;
+
+      // 1) Intentamos extraer una lista de objetos de carta (Cards)
+      final dynamic posiblesCards = raw['Cards'] ?? raw['cards'] ?? raw['CardIds'] ?? raw['cardIds'];
+
+      List<String> cardIdsNormalizados = [];
+      List<Map<String, dynamic>> cardsDetailed = [];
+
+      if (posiblesCards is List) {
+        for (var item in posiblesCards) {
+          if (item == null) continue;
+
+          // Si el item es un objeto con propiedades (Id, Name, ...)
+          if (item is Map) {
+            final idVal = item['Id'] ?? item['id'] ?? item['Id'.toLowerCase()];
+            if (idVal != null) {
+              cardIdsNormalizados.add(idVal.toString());
+            }
+            // Guardamos el objeto detallado para uso directo
+            cardsDetailed.add(Map<String, dynamic>.from(item));
+          } else {
+            // Si es int o string (lista de ids)
+            cardIdsNormalizados.add(item.toString());
+          }
+        }
+      }
+
+      // Si no hemos encontrado nada en 'Cards', intentamos buscar 'cardIds' directo en el deck
+      if (cardIdsNormalizados.isEmpty) {
+        final dynamic alt = raw['cardIds'] ?? raw['CardIds'] ?? raw['cards'] ?? raw['Cards'];
+        if (alt is List) {
+          for (var it in alt) {
+            if (it == null) continue;
+            cardIdsNormalizados.add(it.toString());
+          }
+        }
+      }
+
+      // Devolvemos el deck original y las dos estructuras normalizadas
+      final datosDeck = Map<String, dynamic>.from(raw);
+      datosDeck['cardIdsNormalized'] = cardIdsNormalizados;
+      datosDeck['cardsDetailed'] = cardsDetailed;
+
+      return {'exito': true, 'datos': datosDeck};
     }
+
+    return {'exito': false, 'mensaje': 'Error del servidor: ${respuesta.statusCode}'};
+  } catch (e) {
+    return {'exito': false, 'mensaje': 'Error de conexión: $e'};
   }
+}
+
 
 // --- CATÁLOGO WIKI ---
   static Future<Map<String, dynamic>> obtenerCatalogoCartas() async {

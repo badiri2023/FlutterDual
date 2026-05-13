@@ -277,19 +277,68 @@ Future<void> _ejecutarLogin() async {
   if (usuarioRecuperado != null) {
     setState(() {
       _usuarioLogueado = true;
-    String nombreLimpio = usuarioRecuperado.split('@')[0];
+    });
 
-    if (nombreLimpio.isNotEmpty) {
-      _nombreUsuario = nombreLimpio[0].toUpperCase() + nombreLimpio.substring(1).toLowerCase();
-    } else {
-      _nombreUsuario = nombreLimpio;
-    }      
-      // Actualizamos la vista del chat
+    // Intentamos obtener el username real desde el servidor
+    try {
+      final resPerfil = await ApiServicio.obtenerPerfilCompleto();
+      if (resPerfil['exito'] == true && resPerfil['datos'] != null) {
+        final datos = resPerfil['datos'];
+        String usernameServidor = (datos['username'] ?? datos['Username'] ?? '').toString();
+
+        if (usernameServidor.isNotEmpty) {
+          // Normalizamos capitalización: Primera letra mayúscula, resto minúsculas
+          final nombreLimpio = usernameServidor[0].toUpperCase() + usernameServidor.substring(1).toLowerCase();
+          setState(() {
+            _nombreUsuario = nombreLimpio;
+          });
+        } else {
+          // Fallback: si no hay username en la respuesta, usar parte local del email
+          final fallback = usuarioRecuperado.split('@')[0];
+          setState(() {
+            _nombreUsuario = fallback.isNotEmpty
+                ? (fallback[0].toUpperCase() + fallback.substring(1).toLowerCase())
+                : 'Invitado';
+          });
+        }
+      } else {
+        // Si la petición falla, usamos fallback y mostramos aviso
+        final fallback = usuarioRecuperado.split('@')[0];
+        setState(() {
+          _nombreUsuario = fallback.isNotEmpty
+              ? (fallback[0].toUpperCase() + fallback.substring(1).toLowerCase())
+              : 'Invitado';
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Login correcto, pero no se pudo obtener el perfil: ${resPerfil['mensaje'] ?? 'Error'}')),
+          );
+        }
+      }
+    } catch (e) {
+      // En caso de error de red u otro, usar fallback y notificar
+      final fallback = usuarioRecuperado.split('@')[0];
+      setState(() {
+        _nombreUsuario = fallback.isNotEmpty
+            ? (fallback[0].toUpperCase() + fallback.substring(1).toLowerCase())
+            : 'Invitado';
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login correcto, pero fallo al obtener perfil.')),
+        );
+      }
+    }
+
+    // Actualizamos la vista del chat con el nombre real
+    setState(() {
       _todasLasVistas[3] = VistaChat(
-        nombreUsuario: _nombreUsuario, 
-        estaLogueado: _usuarioLogueado
-      );   
-       });
+        nombreUsuario: _nombreUsuario,
+        estaLogueado: _usuarioLogueado,
+      );
+    });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

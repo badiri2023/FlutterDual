@@ -4,7 +4,7 @@ import 'package:signalr_netcore/signalr_client.dart';
 class SocketServicio {
   HubConnection? _hubConnection;
   
-  final String _urlSocket = 'http://13.49.2.229:5000/ws/chat'; 
+  final String _urlSocket = 'http://13.49.2.229:5000/chathub'; 
 
   final _streamController = StreamController<String>.broadcast();
   Stream<dynamic>? get streamMensajes => _streamController.stream;
