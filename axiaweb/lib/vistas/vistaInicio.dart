@@ -61,7 +61,6 @@ class VistaInicio extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              icon: const Icon(Icons.language),
               label: const Text("DOWNLOADL"),
              ),     
                 
@@ -100,7 +99,7 @@ class VistaInicio extends StatelessWidget {
 
             _buildOpcion(
               titulo: "Shop",
-              descripcion: "Construye tu dek comprando nuevos sobres para obtener las mejores cartas disponibles!",
+              descripcion: "Construye tu deCk comprando nuevos sobres para obtener las mejores cartas disponibles!",
               color: cardColor,
             ),
           ],
