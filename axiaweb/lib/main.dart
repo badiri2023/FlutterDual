@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart'; // Importante para el sonido
+import 'package:audioplayers/audioplayers.dart';
 import 'vistas/vistaPrincipal.dart'; 
 
 // Notificadores globales que usa tu vistaAjustes.dart
@@ -18,18 +18,15 @@ void configurarMusica() async {
   await _audioPlayer.setSource(AssetSource('sonidos/backgroundMusic.mp3'));
   await _audioPlayer.setReleaseMode(ReleaseMode.loop); 
   
-  // 1. Añadimos 'await' para forzar a que espere a aplicar el volumen
-  // 0.1 equivale a un 10% del volumen total. Ajusta este número si es necesario.
+
   await _audioPlayer.setVolume(0.1);
 
   if (musicaNotifier.value) {
     await _audioPlayer.resume();
   }
 
-  // 2. Convertimos el listener en asíncrono para asegurar el volumen al reanudar
   musicaNotifier.addListener(() async {
     if (musicaNotifier.value) {
-      // Por seguridad, re-aplicamos el volumen bajo justo antes de darle al play
       await _audioPlayer.setVolume(0.1);
       await _audioPlayer.resume(); 
     } else {
@@ -38,17 +35,14 @@ void configurarMusica() async {
   });
 }
 
-
 void reproducirClick() async {
-  // Solo suena si el switch de "Efectos de sonido" está activo
   if (sonidoNotifier.value) {
-    // Usamos Source para sonidos rápidos
     await _efectosPlayer.play(AssetSource('sonidos/click.mp3'));
   }
 }
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  configurarMusica(); // Arrancamos el motor de audio
+  configurarMusica(); 
   runApp(const MiApp());
 }
 

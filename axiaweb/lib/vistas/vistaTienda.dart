@@ -11,7 +11,7 @@ class VistaTienda extends StatefulWidget {
 }
 
 class _VistaTiendaState extends State<VistaTienda> {
-  // CONFIGURACIÓN GLOBAL DEL PRECIO
+  
   final int _precioSobreEstandar = 100;
 
   int _monedasUsuario = 0;
@@ -107,7 +107,6 @@ class _VistaTiendaState extends State<VistaTienda> {
     );
   }
 
-  // Plantilla actualizada con LÓGICA DE DESACTIVACIÓN DE BOTÓN
   Widget _buildCardSobre(String nombre, String rutaImagen) {
     // Comprobamos si el usuario tiene dinero suficiente para este sobre
     bool tieneDinero = _monedasUsuario >= _precioSobreEstandar;
@@ -128,7 +127,6 @@ class _VistaTiendaState extends State<VistaTienda> {
             Text(nombre, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             ElevatedButton(
-              // Lógica: Si está comprando O no tiene dinero, el botón es null (desactivado)
               onPressed: (_comprando || !tieneDinero) ? null : () => _abrirSobreReal(nombre),
               style: ElevatedButton.styleFrom(
                 backgroundColor: tieneDinero ? Colors.amber : Colors.grey.shade400,
@@ -206,24 +204,21 @@ class _CarruselCartasSobreState extends State<_CarruselCartasSobre> {
   Widget build(BuildContext context) {
     final bool esOscuro = Theme.of(context).brightness == Brightness.dark;
 
-    // 1. Usamos Dialog para que flote sobre la tienda
     return Dialog(
-      backgroundColor: Colors.transparent, // Transparente para usar nuestro Container
+      backgroundColor: Colors.transparent, 
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
-        // 2. REESCALADO: Max ancho 450 para PC, se adapta en móvil
         constraints: const BoxConstraints(maxWidth: 450, maxHeight: 650),
         child: Container(
-          // 3. COLOR SÓLIDO: Eliminamos el RadialGradient
           decoration: BoxDecoration(
             color: esOscuro ? const Color(0xFF121212) : Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.amber, width: 2), // Borde sólido
+            border: Border.all(color: Colors.amber, width: 2), 
           ),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
-              mainAxisSize: MainAxisSize.min, // El diálogo se ajusta al contenido
+              mainAxisSize: MainAxisSize.min, 
               children: [
                 // --- CABECERA ---
                 Text(

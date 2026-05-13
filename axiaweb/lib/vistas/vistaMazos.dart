@@ -40,59 +40,58 @@ class _VistaMazosState extends State<VistaMazos> {
       });
 
       // Cargamos el Deck guardado del servidor
- final resDeck = await ApiServicio.obtenerMiDeck();
-if (resDeck['exito']) {
-  final datosDeck = resDeck['datos'];
-  final List<String> cardIds = List<String>.from(datosDeck['cardIdsNormalized'] ?? []);
-  final List<dynamic> cardsDetailedRaw = datosDeck['cardsDetailed'] ?? datosDeck['Cards'] ?? datosDeck['cards'] ?? [];
+    final resDeck = await ApiServicio.obtenerMiDeck();
+    if (resDeck['exito']) {
+      final datosDeck = resDeck['datos'];
+      final List<String> cardIds = List<String>.from(datosDeck['cardIdsNormalized'] ?? []);
+      final List<dynamic> cardsDetailedRaw = datosDeck['cardsDetailed'] ?? datosDeck['Cards'] ?? datosDeck['cards'] ?? [];
 
-  // Normalizamos cardsDetailed a List<Map<String, dynamic>>
-  final List<Map<String, dynamic>> cardsDetailed = cardsDetailedRaw
-      .where((e) => e != null)
-      .map((e) => Map<String, dynamic>.from(e as Map))
-      .toList();
+      // Normalizamos cardsDetailed a List<Map<String, dynamic>>
+      final List<Map<String, dynamic>> cardsDetailed = cardsDetailedRaw
+          .where((e) => e != null)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
 
-  setState(() {
-    _deckIdActual = datosDeck['id'];
-    _mazoTemporal = [];
+      setState(() {
+        _deckIdActual = datosDeck['id'];
+        _mazoTemporal = [];
 
-    for (var idCarta in cardIds) {
-      final idStr = idCarta.toString();
+        for (var idCarta in cardIds) {
+          final idStr = idCarta.toString();
 
-      if (_bdCartas.containsKey(idStr)) {
-        _mazoTemporal.add(_bdCartas[idStr]!);
-        continue;
-      }
+          if (_bdCartas.containsKey(idStr)) {
+            _mazoTemporal.add(_bdCartas[idStr]!);
+            continue;
+          }
 
-      // Buscamos en cardsDetailed usando indexWhere (evita orElse con null)
-      final idx = cardsDetailed.indexWhere((c) {
-        final cid = (c['Id'] ?? c['id'] ?? '').toString();
-        return cid == idStr;
+          // Buscamos en cardsDetailed usando indexWhere (evita orElse con null)
+          final idx = cardsDetailed.indexWhere((c) {
+            final cid = (c['Id'] ?? c['id'] ?? '').toString();
+            return cid == idStr;
+          });
+
+          if (idx != -1) {
+            final detalle = cardsDetailed[idx];
+            _mazoTemporal.add(CartaWiki(
+              id: idStr,
+              expansion: (detalle['Expansion'] ?? detalle['expansion'] ?? 'Base').toString(),
+              nombre: (detalle['Name'] ?? detalle['name'] ?? 'Sin nombre').toString(),
+              rareza: (detalle['Rarity'] ?? detalle['rarity'] ?? 'Común').toString(),
+              mana: (detalle['Mana'] ?? detalle['mana'] ?? 0) is int ? (detalle['Mana'] ?? detalle['mana'] ?? 0) as int : int.tryParse((detalle['Mana'] ?? detalle['mana'] ?? '0').toString()) ?? 0,
+              habilidad: detalle['Ability'] != null
+                  ? "${detalle['Ability']['Name'] ?? detalle['Ability']['name'] ?? ''}: ${detalle['Ability']['Description'] ?? detalle['Ability']['description'] ?? ''}"
+                  : 'Sin habilidad',
+              ataque: (detalle['Attack'] ?? detalle['attack'] ?? 0) is int ? (detalle['Attack'] ?? detalle['attack'] ?? 0) as int : int.tryParse((detalle['Attack'] ?? detalle['attack'] ?? '0').toString()) ?? 0,
+              vida: (detalle['Defense'] ?? detalle['defense'] ?? 0) is int ? (detalle['Defense'] ?? detalle['defense'] ?? 0) as int : int.tryParse((detalle['Defense'] ?? detalle['defense'] ?? '0').toString()) ?? 0,
+              descripcion: (detalle['Description'] ?? detalle['description'] ?? '').toString(),
+              imagenUrl: (detalle['ImageUrl'] ?? detalle['imageUrl'] ?? '').toString(),
+            ));
+          } else {
+            print("DEBUG: carta del deck no encontrada: $idStr");
+          }
+        }
       });
-
-      if (idx != -1) {
-        final detalle = cardsDetailed[idx];
-        _mazoTemporal.add(CartaWiki(
-          id: idStr,
-          expansion: (detalle['Expansion'] ?? detalle['expansion'] ?? 'Base').toString(),
-          nombre: (detalle['Name'] ?? detalle['name'] ?? 'Sin nombre').toString(),
-          rareza: (detalle['Rarity'] ?? detalle['rarity'] ?? 'Común').toString(),
-          mana: (detalle['Mana'] ?? detalle['mana'] ?? 0) is int ? (detalle['Mana'] ?? detalle['mana'] ?? 0) as int : int.tryParse((detalle['Mana'] ?? detalle['mana'] ?? '0').toString()) ?? 0,
-          habilidad: detalle['Ability'] != null
-              ? "${detalle['Ability']['Name'] ?? detalle['Ability']['name'] ?? ''}: ${detalle['Ability']['Description'] ?? detalle['Ability']['description'] ?? ''}"
-              : 'Sin habilidad',
-          ataque: (detalle['Attack'] ?? detalle['attack'] ?? 0) is int ? (detalle['Attack'] ?? detalle['attack'] ?? 0) as int : int.tryParse((detalle['Attack'] ?? detalle['attack'] ?? '0').toString()) ?? 0,
-          vida: (detalle['Defense'] ?? detalle['defense'] ?? 0) is int ? (detalle['Defense'] ?? detalle['defense'] ?? 0) as int : int.tryParse((detalle['Defense'] ?? detalle['defense'] ?? '0').toString()) ?? 0,
-          descripcion: (detalle['Description'] ?? detalle['description'] ?? '').toString(),
-          imagenUrl: (detalle['ImageUrl'] ?? detalle['imageUrl'] ?? '').toString(),
-        ));
-      } else {
-        // Depuración: carta no encontrada en inventario ni en cardsDetailed
-        print("DEBUG: carta del deck no encontrada: $idStr");
-      }
     }
-  });
-}
 
 
       setState(() => _cargando = false);
@@ -141,18 +140,14 @@ if (resDeck['exito']) {
       );
       return;
     }
-
-    // Si llega aquí, tiene 20 cartas: procedemos a guardar
     _guardarCambios();
   }
 
   Future<void> _guardarCambios() async {
     setState(() => _guardando = true);
 
-    // Mapeo perfecto a Integers para C#
     List<int> idsParaEnviar = _mazoTemporal.map((c) => int.parse(c.id)).toList();
 
-    // Pasamos tanto la lista como el ID actual
     final res = await ApiServicio.guardarMazo(idsParaEnviar, _deckIdActual);
 
     setState(() => _guardando = false);
@@ -231,12 +226,12 @@ if (resDeck['exito']) {
     );
   }
 
-  // ---------- INVENTARIO (GRID RESPONSIVE) ----------
+  // ---------- INVENTARIO  ----------
   Widget _buildInventario() {
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 220, // ancho máximo por carta; ajusta si quieres cartas más grandes/pequeñas
+        maxCrossAxisExtent: 220, 
         childAspectRatio: 0.70,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
@@ -316,7 +311,7 @@ if (resDeck['exito']) {
     );
   }
 
-  // ---------- MAZO (PANEL) ----------
+  // ---------- MAZO  ----------
   Widget _buildMazo() {
     return Column(
       children: [

@@ -9,7 +9,7 @@ class VistaAjustes extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // --- SECCIÓN 1: DISEÑO ---
+        // --- DISEÑO ---
         _seccionTitulo("Apariencia"),
         ValueListenableBuilder<String>(
           valueListenable: disenoNotifier,
@@ -28,7 +28,7 @@ class VistaAjustes extends StatelessWidget {
 
         const SizedBox(height: 30),
 
-        // --- SECCIÓN 2: AUDIO ---
+        // ---AUDIO ---
         _seccionTitulo("Sonido"),
         ValueListenableBuilder<bool>(
           valueListenable: musicaNotifier,

@@ -11,7 +11,6 @@ class VistaWiki extends StatefulWidget {
 }
 
 class _VistaWikiState extends State<VistaWiki> {
-  // Volvemos a usar tu lista de objetos CartaWiki
   List<CartaWiki> _cartasBaseDatos = [];
   
   bool _cargando = true;
@@ -76,7 +75,6 @@ class _VistaWikiState extends State<VistaWiki> {
       );
     }
 
-    // Aquí volvemos a usar tu GridView con el Prefab
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(

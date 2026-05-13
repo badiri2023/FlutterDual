@@ -18,9 +18,7 @@ class VistaInicio extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // ---------------------------------------------------------
-            // TITULO PRINCIPAL (NEGRO)
-            // ---------------------------------------------------------
+
             const Text(
               "WELCOME TO THE GAME",
               textAlign: TextAlign.center,
@@ -34,9 +32,6 @@ class VistaInicio extends StatelessWidget {
 
             const SizedBox(height: 15),
 
-            // ---------------------------------------------------------
-            // SLOGAN ENTRE COMILLAS (NEGRO)
-            // ---------------------------------------------------------
             const Text(
               "\"A strategic card‑dueling experience\"",
               textAlign: TextAlign.center,
@@ -50,9 +45,6 @@ class VistaInicio extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // ---------------------------------------------------------
-            // FRANJA NEGRA
-            // ---------------------------------------------------------
             Container(
               height: 3,
               width: double.infinity,
@@ -61,9 +53,6 @@ class VistaInicio extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // ---------------------------------------------------------
-            // CONTENEDORES SIN ICONOS
-            // ---------------------------------------------------------
             _buildOpcion(
               titulo: "Build Your Deck",
               descripcion: "Modifica tu Deck para enfrentarte a los combates mas feroces.",
@@ -98,9 +87,6 @@ class VistaInicio extends StatelessWidget {
     );
   }
 
-  // ---------------------------------------------------------
-  // WIDGET DE OPCIÓN (SIN ICONOS)
-  // ---------------------------------------------------------
   Widget _buildOpcion({
     required String titulo,
     required String descripcion,
@@ -120,7 +106,6 @@ class VistaInicio extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // TÍTULO EN NEGRO
           Text(
             titulo,
             style: const TextStyle(
@@ -133,7 +118,6 @@ class VistaInicio extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // DESCRIPCIÓN EN NEGRO
           Text(
             descripcion,
             style: const TextStyle(
