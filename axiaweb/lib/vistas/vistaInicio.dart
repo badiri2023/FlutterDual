@@ -5,12 +5,13 @@ class VistaInicio extends StatelessWidget {
   const VistaInicio({super.key});
 
   Future<void> _lanzarURL() async {
-    final Uri url = Uri.parse('https://tu-sitio-web.com'); // Cambia por tu link
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      throw Exception('No se pudo abrir $url');
-    }
+    final Uri url1 = Uri.parse('https://aixec-game.s3.eu-north-1.amazonaws.com/AixecTheGame/Aixec.exe');
+    await launchUrl(url1, mode: LaunchMode.externalApplication);
   }
-
+  Future<void> _lanzarURL2() async {
+    final Uri url2 = Uri.parse('https://aixec-game.s3.eu-north-1.amazonaws.com/AixecTheGame/Aixec.pck');
+    await launchUrl(url2, mode: LaunchMode.externalApplication);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,9 +62,20 @@ class VistaInicio extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              label: const Text("DOWNLOADL"),
+              label: const Text("DOWNLOAD .EXE"),
              ),     
-                
+                            const SizedBox(height: 10),
+
+            ElevatedButton.icon(
+              onPressed: _lanzarURL2,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              label: const Text("DOWNLOAD .pck"),
+             ), 
             const SizedBox(height: 40),
 
             Container(
