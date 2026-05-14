@@ -35,7 +35,7 @@ class _VistaTiendaState extends State<VistaTienda> {
   }
 
   Future<void> _abrirSobreReal(String nombreExpansion) async {
-    // 1. Doble comprobación de seguridad
+    //  comprobamos monedas suficientes apra comprar
     if (_monedasUsuario < _precioSobreEstandar) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("No tienes suficientes monedas 🪙")),
@@ -45,7 +45,7 @@ class _VistaTiendaState extends State<VistaTienda> {
 
     setState(() => _comprando = true);
 
-    // 2. Llamamos al backend
+    //Llamamos al backend
     final resultado = await ApiServicio.abrirSobre(nombreExpansion);
 
     if (mounted) {
@@ -53,18 +53,15 @@ class _VistaTiendaState extends State<VistaTienda> {
     }
 
     if (resultado['exito']) {
-      // 3. ACTUALIZAMOS LAS MONEDAS AL INSTANTE EN LA PANTALLA
+      // actualizar monedas del usuario
       setState(() {
         _monedasUsuario -= _precioSobreEstandar;
       });
-      
-      // (Opcional) Refrescamos el dato real en segundo plano por seguridad
-      _cargarDatosIniciales(); 
 
-      // 4. ¡EL TRUCO! Transformamos el dynamic a una lista estricta de CartaWiki.
+      _cargarDatosIniciales(); 
+      // guardamos las ccartas
       List<CartaWiki> cartasNuevas = List<CartaWiki>.from(resultado['datos'] ?? resultado['cartas']);
 
-      // 5. Ahora sí, le pasamos la lista con el formato correcto al diálogo
       _mostrarAnimacionSobre(nombreExpansion, cartasNuevas); 
       
     } else {
