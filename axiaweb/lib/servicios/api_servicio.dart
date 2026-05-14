@@ -330,8 +330,8 @@ static Future<Map<String, dynamic>> obtenerMiDeck() async {
     if (respuesta.statusCode == 200) {
       final List<dynamic> decks = jsonDecode(respuesta.body);
 
-      // DEBUG: ver qué devuelve el servidor
-      print("DEBUG obtenerMiDeck body: ${respuesta.body}");
+      // ver qué devuelve el servidor
+      print("obtenerMiDeck body: ${respuesta.body}");
 
       if (decks.isEmpty) {
         return {'exito': false, 'mensaje': 'No tienes mazos creados'};
@@ -339,7 +339,7 @@ static Future<Map<String, dynamic>> obtenerMiDeck() async {
 
       final raw = decks[0] as Map<String, dynamic>;
 
-      // 1) Intentamos extraer una lista de objetos de carta (Cards)
+      //Intentamos extraer una lista de objetos de carta (Cards)
       final dynamic posiblesCards = raw['Cards'] ?? raw['cards'] ?? raw['CardIds'] ?? raw['cardIds'];
 
       List<String> cardIdsNormalizados = [];
@@ -349,7 +349,6 @@ static Future<Map<String, dynamic>> obtenerMiDeck() async {
         for (var item in posiblesCards) {
           if (item == null) continue;
 
-          // Si el item es un objeto con propiedades (Id, Name, ...)
           if (item is Map) {
             final idVal = item['Id'] ?? item['id'] ?? item['Id'.toLowerCase()];
             if (idVal != null) {
@@ -364,7 +363,6 @@ static Future<Map<String, dynamic>> obtenerMiDeck() async {
         }
       }
 
-      // Si no hemos encontrado nada en 'Cards', intentamos buscar 'cardIds' directo en el deck
       if (cardIdsNormalizados.isEmpty) {
         final dynamic alt = raw['cardIds'] ?? raw['CardIds'] ?? raw['cards'] ?? raw['Cards'];
         if (alt is List) {
@@ -402,21 +400,18 @@ static Future<Map<String, dynamic>> obtenerMiDeck() async {
         // Decodificamos la lista que viene del servidor
         List<dynamic> jsonList = jsonDecode(respuesta.body);
         print("JSON RECIBIDO: ${jsonList.first}");
-        // Mapeamos cada "diccionario" JSON a tu objeto CartaWiki
         List<CartaWiki> catalogo = jsonList.map((json) => CartaWiki(
           id: json['id'].toString(), 
           nombre: json['name'] ?? 'Sin nombre',
           descripcion: json['description'] ?? 'Sin descripción',
           ataque: json['attack'] ?? 0,
-          vida: json['defense'] ?? 0, // En el JSON se llama defense
+          vida: json['defense'] ?? 0,
           mana: json['mana'] ?? 0, 
-          rareza: _traducirRareza(json['rarity']), // Convierte el 1,2,3 a texto
+          rareza: _traducirRareza(json['rarity']),
           expansion: json['expansion'] ?? 'Base',
-          // OJO AQUÍ: Como ability es otro objeto, sacamos su nombre así:
           habilidad: json['ability'] != null 
               ? "${json['ability']['name']}: ${json['ability']['description']}" 
               : "Sin habilidad",
-// Usamos 'imageUrl' que es el nombre real que envía tu servidor C#
           imagenUrl: (json['imageUrl'] != null && json['imageUrl'].toString().trim().isNotEmpty)
               ? "https://aixec-card-images.s3.eu-north-1.amazonaws.com/card${json['id'].toString().padLeft(3, '0')}.jpg"
               : "",
